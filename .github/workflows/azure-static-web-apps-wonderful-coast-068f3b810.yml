@@ -35,13 +35,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
 
-          # Frontend is inside the frontend folder
           app_location: "./frontend"
-
-          # No Azure Static Web Apps API
           api_location: ""
-
-          # Vite outputs the production build to dist
           output_location: "dist"
 
   close_pull_request_job:
