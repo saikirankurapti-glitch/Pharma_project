@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../store';
 import { navigateTo, logoutUser, setInvoiceHistoryModalOpen, switchActivePharmacist, setWellnessBrochureModalOpen, setMultiStoreModalOpen, setInterStoreChatbotModalOpen } from '../store/posSlice';
-import { Wifi, Clock, Store, LogOut, LayoutDashboard, ShoppingCart, Package, Truck, BarChart3, RotateCcw, Users, Building, Settings, History, FileText, Siren, ChevronDown, Check, Bike, AlertTriangle, Sparkles, Building2, Bot } from 'lucide-react';
+import { Clock, Store, LogOut, LayoutDashboard, ShoppingCart, Package, Truck, BarChart3, RotateCcw, Users, Building, Settings, History, FileText, Siren, ChevronDown, Check, Bike, AlertTriangle, Sparkles, Building2, Bot } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const dispatch = useDispatch();
@@ -10,7 +10,6 @@ export const Navbar: React.FC = () => {
   const currentView = useSelector((state: RootState) => state.pos.currentView);
   const pharmacists = useSelector((state: RootState) => state.pos.pharmacists);
   const activePharmacistId = useSelector((state: RootState) => state.pos.activePharmacistId);
-  const [timeStr, setTimeStr] = useState<string>('');
   const [showProfileDropdown, setShowProfileDropdown] = useState<boolean>(false);
   const [showCounterDropdown, setShowCounterDropdown] = useState<boolean>(false);
 
@@ -26,16 +25,6 @@ export const Navbar: React.FC = () => {
   // Emergency desk mode: signed in with Emergency Desk option
   const isEmergencyDesk = currentView === 'EMERGENCY_DELIVERY' && accountName.includes('Dr. S. Reddy');
 
-  useEffect(() => {
-    const updateClock = () => {
-      const now = new Date();
-      setTimeStr(now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }));
-    };
-    updateClock();
-    const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <header className="bg-white border-b border-slate-200 shadow-xs px-4 py-2 flex items-center justify-between sticky top-0 z-30">
       {/* Brand & Store Information */}
@@ -49,27 +38,6 @@ export const Navbar: React.FC = () => {
               GENQUANTAA POS
             </h1>
           </div>
-        </div>
-      </div>
-
-      {/* Center Status Indicators (Compact) */}
-      <div className="hidden md:flex items-center space-x-2 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
-        {/* Offline Reliability Status */}
-        <div className="flex items-center space-x-1 text-[11px] font-semibold text-emerald-700">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-          </span>
-          <Wifi className="w-3 h-3 text-emerald-600" />
-          <span>72h Offline Ready</span>
-        </div>
-
-        <div className="h-3 w-[1px] bg-slate-300"></div>
-
-        {/* Live Clock */}
-        <div className="flex items-center space-x-1 text-[11px] font-semibold text-slate-600">
-          <Clock className="w-3 h-3 text-slate-400" />
-          <span>{timeStr || '12:00:00 PM'}</span>
         </div>
       </div>
 
