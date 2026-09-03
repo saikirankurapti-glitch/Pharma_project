@@ -64,4 +64,3 @@ jobs:
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_24F7AD2F94DF4F7CBC91D372B97997EB }}
           package: deploy
-          startup-command: 'node dist/index.js'
