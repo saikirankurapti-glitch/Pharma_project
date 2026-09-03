@@ -6,19 +6,27 @@ const posPath = path.join(root, 'src/store/posSlice.ts');
 let pos = fs.readFileSync(posPath, 'utf8');
 
 const replace = (from, to) => {
-  if (!pos.includes(from)) console.warn(`build patch: pattern not found: ${from.slice(0, 100)}`);
+  if (!pos.includes(from)) console.warn(`build patch: pattern not found: ${from.slice(0, 120)}`);
   pos = pos.replace(from, to);
 };
 
+// Auth payload compatibility.
 replace("loginUser: (state, action: PayloadAction<{ email: string; password?: string; pharmacistName?: string; pharmacyName?: string; licenseNo?: string }>) => {", "loginUser: (state, action: PayloadAction<{ email: string; password?: string; pharmacistName?: string; pharmacyName?: string; licenseNo?: string; role?: string }>) => {");
 replace("email: email || 'user@genquantaa.com',\n        isLoggedIn: true", "email: email || 'user@genquantaa.com',\n        role: action.payload.role,\n        isLoggedIn: true");
+
+// FEFO helper is imported only for earliest-batch lookup; sort locally here.
 replace("const sortedBatches = getSortedBatchesFEFO(product.batches || []);", "const sortedBatches = [...(product.batches || [])].sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime());");
+
+// Supplier bill numeric fields can come from API/local persisted data as unknown.
 replace("bill.paidAmount += amount;\n          bill.pendingAmount = Math.max(0, bill.totalAmount - bill.paidAmount);", "bill.paidAmount = Number(bill.paidAmount ?? 0) + amount;\n          bill.pendingAmount = Math.max(0, Number(bill.totalAmount ?? 0) - Number(bill.paidAmount ?? 0));");
 replace("if (newBill.billType === 'CREDIT' && newBill.pendingAmount > 0) {", "if (newBill.billType === 'CREDIT' && Number(newBill.pendingAmount ?? 0) > 0) {");
 replace("supplier.pendingBalance += newBill.pendingAmount;", "supplier.pendingBalance += Number(newBill.pendingAmount ?? 0);");
-replace("patientDetails: {\n            patientName: order.customerName,\n            phone: order.customerPhone,\n            gender: 'MALE'\n          },", "patientDetails: {\n            patientName: order.customerName,\n            phone: order.customerPhone,\n            age: '',\n            gender: 'MALE'\n          },");
+
+// Online-delivery invoice must satisfy BillingSession/PaymentDetails contracts.
+replace("patientDetails: {\n            patientName: order.customerName,\n            phone: order.customerPhone,\n            gender: 'MALE'\n          },", "patientDetails: {\n            patientName: order.customerName,\n            phone: order.customerPhone,\n            age: '',\n            gender: 'MALE'\n          },\n          assignedPharmacistId: state.activePharmacistId,\n          scheduleXVerified: false,\n          pharmacistSignatureAcknowledged: false,");
 replace("payment: {\n          mode: (action.payload.paymentMode || 'UPI') as any,\n          receivedAmount: grandTotal,\n          changeDue: 0,\n          digitalTransactionRef: order.orderNumber,\n          splitAmounts: { cash: 0, card: 0, upi: grandTotal }\n        },", "payment: {\n          method: ((action.payload.paymentMode || 'UPI') as any),\n          mode: action.payload.paymentMode || 'UPI',\n          receivedAmount: grandTotal,\n          cashAmount: 0,\n          upiAmount: grandTotal,\n          cardAmount: 0,\n          totalPaid: grandTotal,\n          changeDue: 0,\n          digitalTransactionRef: order.orderNumber,\n          splitAmounts: { cash: 0, card: 0, upi: grandTotal },\n          paymentStatus: 'SUCCESS'\n        },");
 
+// Missing Redux actions used by existing UI components.
 const reducerAnchor = "    setHeldBillsModalOpen: (state, action: PayloadAction<boolean>) => {\n      state.heldBillsModal.isOpen = action.payload;\n    },";
 if (!pos.includes("setHeldBills: (state")) pos = pos.replace(reducerAnchor, reducerAnchor + "\n    setHeldBills: (state, action: PayloadAction<HeldBill[]>) => {\n      state.heldBills = action.payload;\n    },");
 
@@ -38,4 +46,13 @@ let product = fs.readFileSync(productPath, 'utf8');
 const countAnchor = "  const tabCounts: Record<FilterTab, number> = {\n    ALL:          products.length,\n";
 if (product.includes(countAnchor) && !product.includes("PREVIOUSLY_ORDERED: previouslyOrderedProdIds.size")) product = product.replace(countAnchor, "  const tabCounts: Record<FilterTab, number> = {\n    ALL:          products.length,\n    PREVIOUSLY_ORDERED: previouslyOrderedProdIds.size,\n");
 fs.writeFileSync(productPath, product);
-console.log('Applied TypeScript build compatibility fixes.');
+
+// The seed chronic-medication records intentionally omit a display frequency.
+// Keep the domain model compatible with those records by making frequency optional.
+const typesPath = path.join(root, 'src/types/pos.ts');
+let types = fs.readFileSync(typesPath, 'utf8');
+types = types.replace("  frequency: string;\n  frequencyDays: number;", "  frequency?: string;\n  frequencyDays: number;");
+types = types.replace("  tradeDiscountPercent?: number;\n  rebatePercent?: number;", "  tradeDiscountPercent?: number;\n  rebatePercent?: number;\n  liquidMarginPercent?: number;");
+fs.writeFileSync(typesPath, types);
+
+console.log('Applied all remaining TypeScript build compatibility fixes.');
