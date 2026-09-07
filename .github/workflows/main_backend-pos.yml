@@ -25,7 +25,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Build backend
         working-directory: backend
