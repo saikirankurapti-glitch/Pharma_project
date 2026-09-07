@@ -35,10 +35,16 @@ jobs:
         run: |
           rm -rf deploy
           mkdir -p deploy
-          cp backend/package.json deploy/package.json
-          cp backend/package-lock.json deploy/package-lock.json
-          cp backend/tsconfig.json deploy/tsconfig.json
-          cp -R backend/src deploy/src
+          node <<'NODE'
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('backend/package.json', 'utf8'));
+          delete pkg.devDependencies;
+          delete pkg.scripts.dev;
+          delete pkg.scripts.build;
+          delete pkg.scripts.lint;
+          pkg.scripts = { start: 'node dist/index.js' };
+          fs.writeFileSync('deploy/package.json', JSON.stringify(pkg, null, 2) + '\n');
+          NODE
           cp -R backend/dist deploy/dist
 
       - name: Upload backend artifact
