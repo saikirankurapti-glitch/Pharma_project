@@ -1,31 +1,28 @@
 import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
 
+// Local development uses Vite's /api proxy. Production is deployed as a
+// separate Azure Static Web App, so API calls must target the Azure backend.
+const apiBaseUrl = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
 });
 
-// Short-lived GET cache + request de-duplication. This prevents multiple React
-// components from requesting the same resource at the same time and avoids
-// repeated dashboard/list fetches during normal navigation.
 type CacheEntry = { expiresAt: number; data: unknown };
 const getCache = new Map<string, CacheEntry>();
 const inFlight = new Map<string, Promise<any>>();
 const DEFAULT_TTL = 15_000;
 
 const cacheKey = (url: string, params?: unknown) => `${url}|${JSON.stringify(params ?? {})}`;
-
 const invalidateCache = () => getCache.clear();
 
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token && config.headers) config.headers.Authorization = `Bearer ${token}`;
-
-    // Any write can make previously cached GET responses stale. Invalidating
-    // here also avoids wrapping Axios mutation methods and breaking their tuple types.
     if (config.method && config.method.toLowerCase() !== 'get') invalidateCache();
     return config;
   },
@@ -64,7 +61,6 @@ api.get = ((url: string, config?: AxiosRequestConfig) => {
 
   const request = originalGet(url, config)
     .then((response) => {
-      // Only cache successful GET responses and keep the cache deliberately short.
       getCache.set(key, { data: response.data, expiresAt: Date.now() + DEFAULT_TTL });
       return response;
     })
