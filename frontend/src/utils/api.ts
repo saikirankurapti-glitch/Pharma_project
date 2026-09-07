@@ -1,4 +1,5 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import axios from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 
 const api = axios.create({
   baseURL: '/api',
@@ -16,10 +17,16 @@ const DEFAULT_TTL = 15_000;
 
 const cacheKey = (url: string, params?: unknown) => `${url}|${JSON.stringify(params ?? {})}`;
 
+const invalidateCache = () => getCache.clear();
+
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token && config.headers) config.headers.Authorization = `Bearer ${token}`;
+
+    // Any write can make previously cached GET responses stale. Invalidating
+    // here also avoids wrapping Axios mutation methods and breaking their tuple types.
+    if (config.method && config.method.toLowerCase() !== 'get') invalidateCache();
     return config;
   },
   (error) => Promise.reject(error)
@@ -28,7 +35,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) localStorage.removeItem('token');
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      invalidateCache();
+    }
     return Promise.reject(error);
   }
 );
@@ -63,12 +73,5 @@ api.get = ((url: string, config?: AxiosRequestConfig) => {
   inFlight.set(key, request);
   return request;
 }) as typeof api.get;
-
-// Mutations invalidate cached GETs so the UI never serves stale data after a write.
-const invalidateCache = () => getCache.clear();
-for (const method of ['post', 'put', 'patch', 'delete'] as const) {
-  const original = api[method].bind(api);
-  (api as any)[method] = (...args: any[]) => original(...args).finally(invalidateCache);
-}
 
 export default api;
