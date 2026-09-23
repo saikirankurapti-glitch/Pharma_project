@@ -51,7 +51,7 @@ jobs:
           JWT_SECRET: qa-jwt-secret
           JWT_REFRESH_SECRET: qa-refresh-secret
           NODE_ENV: test
-        run: npx tsx qa/setup.ts
+        run: npx tsx backend/qa/setup.ts
 
       - name: Start backend
         working-directory: backend
