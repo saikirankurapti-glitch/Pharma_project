@@ -1,4 +1,9 @@
 import json, os, re, time, urllib.request, urllib.error, urllib.parse
+try:
+    with open("/tmp/qa-runtime.json", encoding="utf-8") as f:
+        RUNTIME=json.load(f)
+except FileNotFoundError:
+    RUNTIME={}
 BASE=os.getenv("BASE_URL","http://127.0.0.1:5000/api")
 groups=[("AUTH",17),("POS",56),("INV",12),("GRN",5),("RET",7),("EXP",6),("PAT",9),("SUP",5),("DEL",10),("RPT",9),("SET",9),("CLI",5),("VOI",5),("PO",6),("NFR",20)]
 IDS=[f"TC-{p}-{i:03d}" for p,n in groups for i in range(1,n+1)]
@@ -22,7 +27,7 @@ def login(email):
     s,b,_=call("/auth/login","POST",payload={"email":email,"password":"QaPass@123"})
     if s!=200 or not b.get("token"): raise RuntimeError("QA login failed")
     return b["token"]
-ph=login(os.environ["QA_PHARMACIST_EMAIL"]); mg=login(os.environ["QA_MANAGER_EMAIL"])
+ph=login(RUNTIME.get("pharmacistEmail") or os.environ.get("QA_PHARMACIST_EMAIL")); mg=login(RUNTIME.get("managerEmail") or os.environ.get("QA_MANAGER_EMAIL"))
 results=[]
 for tc in IDS:
     try:
@@ -45,7 +50,7 @@ for tc in IDS:
         elif tc=="TC-AUTH-012":
             s,_,_=call("/auth/users",token=mg); assert s==200; actual="staff roster available"
         elif tc in ("TC-AUTH-013","TC-AUTH-014"):
-            pin=os.environ["QA_MANAGER_PIN"] if tc.endswith("013") else "0000"; s,b,_=call("/auth/verify-manager-pin","POST",mg,{"pin":pin}); assert s==200 and b.get("authorized")== (pin==os.environ["QA_MANAGER_PIN"]); actual="manager PIN path"
+            pin=RUNTIME.get("managerPin") or os.environ.get("QA_MANAGER_PIN") if tc.endswith("013") else "0000"; s,b,_=call("/auth/verify-manager-pin","POST",mg,{"pin":pin}); assert s==200 and b.get("authorized")== (pin==os.environ["QA_MANAGER_PIN"]); actual="manager PIN path"
         elif tc=="TC-AUTH-015":
             s,b,_=call("/billing/counters",token=ph); assert s==200 and any("Emergency" in str(x.get("name")) for x in b.get("data",[])); actual="emergency counter exposed"
         elif tc=="TC-AUTH-016":
