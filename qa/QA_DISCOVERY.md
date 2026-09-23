@@ -93,11 +93,11 @@ The workbook contains 181 traceable cases across Authentication, POS Billing, In
 The current GitHub runner executes API/contract checks where possible and marks UI/environment-dependent cases BLOCKED rather than PASS.
 
 ## Known findings from the last executed suite
-- Unsupported prescription .exe was accepted by the current API runner.
-- Seven-day report performance probe failed.
-- Five-concurrent-session check failed.
-- 10,000-SKU scalability check failed.
-- GRN → sale → return E2E currently returns HTTP 500.
+- Unsupported prescription .exe is accepted by the current API runner (DEF-PAT-001).
+- Seven-day report performance check passes after fixing the runner to use an authorized report role.
+- Five-concurrent-session check passes after correcting the runner to execute true concurrent probes.
+- 10,000-SKU scalability check is BLOCKED because only 14 product records are available in the QA dataset.
+- GRN → sale → return E2E passed after fixing the automation fixture to use a valid ReturnNote reason.
 - Sprint 5 and Sprint 6 requirements are pending in the URS.
 - Some UI-only and external integration checks remain blocked.
 
