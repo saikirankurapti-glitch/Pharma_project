@@ -36,10 +36,10 @@ for tc in IDS:
             s,_,_=call("/auth/login","POST",payload={"email":"","password":"QaPass@123"}); assert s==400
             actual="blank email rejected"
         elif tc=="TC-AUTH-003":
-            s,_,_=call("/auth/login","POST",payload={"email":os.environ["QA_PHARMACIST_EMAIL"],"password":""}); assert s==400
+            s,_,_=call("/auth/login","POST",payload={"email":RUNTIME.get("pharmacistEmail"),"password":""}); assert s==400
             actual="blank password rejected"
         elif tc=="TC-AUTH-004":
-            s,_,_=call("/auth/login","POST",payload={"email":os.environ["QA_PHARMACIST_EMAIL"],"password":"bad"}); assert s==401
+            s,_,_=call("/auth/login","POST",payload={"email":RUNTIME.get("pharmacistEmail"),"password":"bad"}); assert s==401
             actual="invalid password rejected"
         elif tc in ("TC-AUTH-001","TC-AUTH-005"):
             s,b,_=call("/auth/me",token=ph); assert s==200 and b.get("user"); actual="authenticated token verified"
