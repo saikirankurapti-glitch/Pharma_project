@@ -76,7 +76,7 @@ jobs:
       - name: Run all 181 automated test cases
         env:
           BASE_URL: http://127.0.0.1:5000/api
-        run: node qa/all-181-runner.mjs
+        run: python3 qa/all_181_runner.py
 
       - name: Upload comprehensive QA results
         if: always()
