@@ -1,0 +1,81 @@
+name: Pharmacy POS QA - Automated E2E
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "qa/pos-automated-e2e" ]
+
+jobs:
+  api-e2e:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install backend
+        working-directory: backend
+        run: npm ci
+
+      - name: Seed products
+        working-directory: backend
+        env:
+          MONGO_URI: mongodb://127.0.0.1:27017/genquantaa_pharmacy_qa
+          PORT: 5000
+          JWT_SECRET: qa-jwt-secret
+          JWT_REFRESH_SECRET: qa-refresh-secret
+          NODE_ENV: test
+        run: npx tsx src/seedMockData.ts
+
+      - name: Prepare QA users and settings
+        env:
+          MONGO_URI: mongodb://127.0.0.1:27017/genquantaa_pharmacy_qa
+          PORT: 5000
+          JWT_SECRET: qa-jwt-secret
+          JWT_REFRESH_SECRET: qa-refresh-secret
+          NODE_ENV: test
+        run: npx tsx qa/setup.ts
+
+      - name: Start backend
+        working-directory: backend
+        env:
+          MONGO_URI: mongodb://127.0.0.1:27017/genquantaa_pharmacy_qa
+          PORT: 5000
+          JWT_SECRET: qa-jwt-secret
+          JWT_REFRESH_SECRET: qa-refresh-secret
+          NODE_ENV: test
+          CLIENT_URL: http://localhost:5173
+        run: |
+          nohup npx tsx src/index.ts > /tmp/pharmacy-backend.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:5000/api/health && break || sleep 2; done
+
+      - name: Run 5 E2E business scenarios
+        env:
+          BASE_URL: http://127.0.0.1:5000/api
+          MONGO_URI: mongodb://127.0.0.1:27017/genquantaa_pharmacy_qa
+          JWT_SECRET: qa-jwt-secret
+        run: node qa/pos-e2e.mjs | tee qa-results.json
+
+      - name: Upload QA results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pharmacy-pos-qa-results
+          path: |
+            qa-results.json
+            /tmp/pharmacy-backend.log
