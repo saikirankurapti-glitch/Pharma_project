@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ "qa/pos-automated-e2e" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   api-e2e:
