@@ -22,7 +22,7 @@ def login(email):
     s,b,_=call("/auth/login","POST",payload={"email":email,"password":"QaPass@123"})
     if s!=200 or not b.get("token"): raise RuntimeError("QA login failed")
     return b["token"]
-ph=login("qa.pharmacist@genquantaa.com"); mg=login("qa.manager@genquantaa.com")
+ph=login(os.environ["QA_PHARMACIST_EMAIL"]); mg=login(os.environ["QA_MANAGER_EMAIL"])
 results=[]
 for tc in IDS:
     try:
@@ -31,10 +31,10 @@ for tc in IDS:
             s,_,_=call("/auth/login","POST",payload={"email":"","password":"QaPass@123"}); assert s==400
             actual="blank email rejected"
         elif tc=="TC-AUTH-003":
-            s,_,_=call("/auth/login","POST",payload={"email":"qa.pharmacist@genquantaa.com","password":""}); assert s==400
+            s,_,_=call("/auth/login","POST",payload={"email":os.environ["QA_PHARMACIST_EMAIL"],"password":""}); assert s==400
             actual="blank password rejected"
         elif tc=="TC-AUTH-004":
-            s,_,_=call("/auth/login","POST",payload={"email":"qa.pharmacist@genquantaa.com","password":"bad"}); assert s==401
+            s,_,_=call("/auth/login","POST",payload={"email":os.environ["QA_PHARMACIST_EMAIL"],"password":"bad"}); assert s==401
             actual="invalid password rejected"
         elif tc in ("TC-AUTH-001","TC-AUTH-005"):
             s,b,_=call("/auth/me",token=ph); assert s==200 and b.get("user"); actual="authenticated token verified"
@@ -45,7 +45,7 @@ for tc in IDS:
         elif tc=="TC-AUTH-012":
             s,_,_=call("/auth/users",token=mg); assert s==200; actual="staff roster available"
         elif tc in ("TC-AUTH-013","TC-AUTH-014"):
-            pin="1234" if tc.endswith("013") else "0000"; s,b,_=call("/auth/verify-manager-pin","POST",mg,{"pin":pin}); assert s==200 and b.get("authorized")== (pin=="1234"); actual="manager PIN path"
+            pin=os.environ["QA_MANAGER_PIN"] if tc.endswith("013") else "0000"; s,b,_=call("/auth/verify-manager-pin","POST",mg,{"pin":pin}); assert s==200 and b.get("authorized")== (pin==os.environ["QA_MANAGER_PIN"]); actual="manager PIN path"
         elif tc=="TC-AUTH-015":
             s,b,_=call("/billing/counters",token=ph); assert s==200 and any("Emergency" in str(x.get("name")) for x in b.get("data",[])); actual="emergency counter exposed"
         elif tc=="TC-AUTH-016":
