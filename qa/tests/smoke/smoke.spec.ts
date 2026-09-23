@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../../pages/LoginPage';
+import { getRuntime } from '../../utils/runtime';
 
-const email = process.env.QA_PHARMACIST_EMAIL;
-const password = process.env.QA_PASSWORD;
+const runtime = getRuntime();
+const email = runtime.pharmacistEmail;
+const password = runtime.password;
 
 test.describe('Smoke', () => {
-  test.skip(!email || !password, 'QA credentials must be supplied through environment variables');
-
   test('SMOKE-001 application loads and login succeeds', async ({ page }) => {
     await new LoginPage(page).signIn(email!, password!);
     await expect(page.locator('header')).toBeVisible();
