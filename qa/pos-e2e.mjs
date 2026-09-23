@@ -186,7 +186,7 @@ await test('TC-E2E-004', 'GRN to inventory to sale to return', async () => {
     method: 'POST', headers: auth(manager),
     body: JSON.stringify({
       originalInvoiceNo: invoiceNo, patientName: 'QA Return Patient', returnDate: new Date().toISOString(),
-      items: [{ productId: refreshed._id, productName: refreshed.name, batchNumber: batch, quantityReturned: 1, unitPrice: refreshed.sellingPrice, refundAmount: refreshed.sellingPrice, reason: 'QA_TEST', restocked: true }],
+      items: [{ productId: refreshed._id, productName: refreshed.name, batchNumber: batch, quantityReturned: 1, unitPrice: refreshed.sellingPrice, refundAmount: refreshed.sellingPrice, reason: 'CUSTOMER_CANCELLED', restocked: true }],
       totalRefundAmount: refreshed.sellingPrice, refundMethod: 'CASH',
     }),
   });
