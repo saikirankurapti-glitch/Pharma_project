@@ -1,4 +1,4 @@
-import json, os, re, time, urllib.request, urllib.error, urllib.parse
+import json, os, re, time, urllib.request, urllib.error, urllib.parse, concurrent.futures
 try:
     with open("/tmp/qa-runtime.json", encoding="utf-8") as f:
         RUNTIME=json.load(f)
@@ -132,8 +132,38 @@ for tc in IDS:
                 s,b,_=call("/auth/verify-manager-pin","POST",ph,{"pin":"0000"}); assert s==200 and b.get("authorized") is False; actual="PIN gate"
             elif tc=="TC-NFR-019":
                 s,_,_=call("/products","POST",mg,{}); assert s in (400,500); actual="invalid payload response"
+            elif tc=="TC-NFR-006":
+                started=time.perf_counter()
+                s,_,_=call("/reports/daily-revenue?days=7",token=mg)
+                elapsed_ms=(time.perf_counter()-started)*1000
+                assert s==200
+                assert elapsed_ms < 1500, f"7-day report took {elapsed_ms:.1f}ms"
+                actual=f"7-day report {elapsed_ms:.1f}ms"
+            elif tc=="TC-NFR-007":
+                def session_probe(_):
+                    s,_,_=call("/products?search=Dolo%20650",token=ph)
+                    return s
+                started=time.perf_counter()
+                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+                    statuses=list(pool.map(session_probe, range(5)))
+                elapsed_ms=(time.perf_counter()-started)*1000
+                assert statuses == [200,200,200,200,200]
+                actual=f"5 concurrent sessions {elapsed_ms:.1f}ms"
+            elif tc=="TC-NFR-008":
+                s,b,_=call("/products?limit=10000",token=mg)
+                assert s==200
+                sku_count=len(b.get("data",[])) if isinstance(b,dict) else 0
+                if sku_count < 10000:
+                    status="BLOCKED"
+                    actual=f"10,000-SKU dataset unavailable; API returned {sku_count} records"
+                else:
+                    started=time.perf_counter()
+                    s,_,_=call("/products?search=Dolo",token=mg)
+                    elapsed_ms=(time.perf_counter()-started)*1000
+                    assert s==200
+                    actual=f"10,000-SKU search {elapsed_ms:.1f}ms"
             else:
-                path="/products?search=Dolo%20650" if tc=="TC-NFR-002" else "/products?search=Dolo" if tc=="TC-NFR-003" else "/invoices?limit=1" if tc=="TC-NFR-004" else "/reports/dashboard-stats" if tc=="TC-NFR-005" else "/reports/daily-revenue"
+                path="/products?search=Dolo%20650" if tc=="TC-NFR-002" else "/products?search=Dolo" if tc=="TC-NFR-003" else "/invoices?limit=1" if tc=="TC-NFR-004" else "/reports/dashboard-stats"
                 for _ in range(10): s,_,_=call(path,token=ph); assert s==200
                 actual="10-request performance probe"
         else:
