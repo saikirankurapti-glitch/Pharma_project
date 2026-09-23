@@ -1,4 +1,4 @@
-import json, os, re, time, urllib.request, urllib.error
+import json, os, re, time, urllib.request, urllib.error, urllib.parse
 BASE=os.getenv("BASE_URL","http://127.0.0.1:5000/api")
 groups=[("AUTH",17),("POS",56),("INV",12),("GRN",5),("RET",7),("EXP",6),("PAT",9),("SUP",5),("DEL",10),("RPT",9),("SET",9),("CLI",5),("VOI",5),("PO",6),("NFR",20)]
 IDS=[f"TC-{p}-{i:03d}" for p,n in groups for i in range(1,n+1)]
