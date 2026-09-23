@@ -5,20 +5,33 @@ import { User } from '../src/models/User';
 import { StoreSettings } from '../src/models/StoreSettings';
 import { Supplier } from '../src/models/Supplier';
 
+const required = (name: string) => {
+  const value = process.env[name];
+  if (!value) throw new Error('Missing required QA environment variable: ' + name);
+  return value;
+};
+
 async function main() {
   await connectDB();
-  const passwordHash = await bcrypt.hash('QaPass@123', 10);
-  const managerHash = await bcrypt.hash('1234', 10);
-  const ownerHash = await bcrypt.hash('9999', 10);
 
-  await User.findOneAndUpdate({ email: 'qa.pharmacist@genquantaa.com' }, {
+  const pharmacistEmail = required('QA_PHARMACIST_EMAIL');
+  const managerEmail = required('QA_MANAGER_EMAIL');
+  const password = required('QA_PASSWORD');
+  const managerPin = required('QA_MANAGER_PIN');
+  const ownerPin = required('QA_OWNER_PIN');
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const managerHash = await bcrypt.hash(managerPin, 10);
+  const ownerHash = await bcrypt.hash(ownerPin, 10);
+
+  await User.findOneAndUpdate({ email: pharmacistEmail }, {
     pharmacistName: 'QA Pharmacist', pharmacyName: 'GENQUANTAA QA Pharmacy', licenseNo: 'QA-LIC-001',
-    email: 'qa.pharmacist@genquantaa.com', passwordHash, role: 'PHARMACIST', isActive: true, loginAttempts: 0
+    email: pharmacistEmail, passwordHash, role: 'PHARMACIST', isActive: true, loginAttempts: 0
   }, { upsert: true, new: true, setDefaultsOnInsert: true });
 
-  await User.findOneAndUpdate({ email: 'qa.manager@genquantaa.com' }, {
+  await User.findOneAndUpdate({ email: managerEmail }, {
     pharmacistName: 'QA Manager', pharmacyName: 'GENQUANTAA QA Pharmacy', licenseNo: 'QA-LIC-002',
-    email: 'qa.manager@genquantaa.com', passwordHash, role: 'MANAGER', isActive: true, loginAttempts: 0
+    email: managerEmail, passwordHash, role: 'MANAGER', isActive: true, loginAttempts: 0
   }, { upsert: true, new: true, setDefaultsOnInsert: true });
 
   await StoreSettings.findOneAndUpdate({}, {
@@ -26,7 +39,7 @@ async function main() {
     phone: '9000000000', address: 'QA Test Environment', defaultPrintFormat: 'THERMAL',
     autoPrintReceipt: false, soundEffects: false, autoAddOnScan: true, nearExpiryDaysThreshold: 30,
     defaultTaxType: 'CGST_SGST', managerPin: managerHash, managerName: 'QA Manager',
-    managerEmail: 'qa.manager@genquantaa.com', ownerName: 'QA Owner', ownerEmail: 'qa.owner@genquantaa.com', ownerPin: ownerHash
+    managerEmail, ownerName: 'QA Owner', ownerEmail: 'qa.owner@genquantaa.com', ownerPin: ownerHash
   }, { upsert: true, new: true, setDefaultsOnInsert: true });
 
   await Supplier.findOneAndUpdate({ email: 'qa.supplier@genquantaa.com' }, {
@@ -38,4 +51,9 @@ async function main() {
   console.log('QA test data ready');
   await mongoose.disconnect();
 }
-main().catch(async e => { console.error(e); await mongoose.disconnect(); process.exit(1); });
+
+main().catch(async e => {
+  console.error(e);
+  await mongoose.disconnect();
+  process.exit(1);
+});
