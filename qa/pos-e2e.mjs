@@ -198,7 +198,7 @@ await test('TC-E2E-005', 'Delivery to invoice to reporting and security', async 
     body: JSON.stringify({
       customerName: 'QA Delivery Customer', customerPhone: '9000000005',
       deliveryMode: 'HOME_DELIVERY', deliveryAddress: 'QA Test Address',
-      items: [{ productId: p._id, productName: p.name, quantity: 1, unitPrice: p.sellingPrice }],
+      items: [{ productId: p._id, productName: p.name, quantity: 1, unitPrice: p.sellingPrice, lineTotal: p.sellingPrice }],
       totalAmount: p.sellingPrice, deliveryType: 'STANDARD', prescriptionRequired: false,
     }),
   });
