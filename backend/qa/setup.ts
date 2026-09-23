@@ -1,24 +1,24 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
+import crypto from 'crypto';
+import fs from 'fs';
 import { connectDB } from '../src/config/db';
 import { User } from '../src/models/User';
 import { StoreSettings } from '../src/models/StoreSettings';
 import { Supplier } from '../src/models/Supplier';
 
-const required = (name: string) => {
-  const value = process.env[name];
-  if (!value) throw new Error('Missing required QA environment variable: ' + name);
-  return value;
+const runtime = {
+  pharmacistEmail: process.env.QA_PHARMACIST_EMAIL || 'qa.pharmacist@genquantaa.com',
+  managerEmail: process.env.QA_MANAGER_EMAIL || 'qa.manager@genquantaa.com',
+  password: process.env.QA_PASSWORD || crypto.randomBytes(16).toString('hex'),
+  managerPin: process.env.QA_MANAGER_PIN || crypto.randomBytes(4).toString('hex'),
+  ownerPin: process.env.QA_OWNER_PIN || crypto.randomBytes(4).toString('hex')
 };
 
 async function main() {
   await connectDB();
 
-  const pharmacistEmail = required('QA_PHARMACIST_EMAIL');
-  const managerEmail = required('QA_MANAGER_EMAIL');
-  const password = required('QA_PASSWORD');
-  const managerPin = required('QA_MANAGER_PIN');
-  const ownerPin = required('QA_OWNER_PIN');
+  const { pharmacistEmail, managerEmail, password, managerPin, ownerPin } = runtime;
 
   const passwordHash = await bcrypt.hash(password, 10);
   const managerHash = await bcrypt.hash(managerPin, 10);
@@ -48,6 +48,7 @@ async function main() {
     address: 'QA Warehouse', pendingBalance: 0
   }, { upsert: true, new: true, setDefaultsOnInsert: true });
 
+  fs.writeFileSync('/tmp/qa-runtime.json', JSON.stringify(runtime), { mode: 0o600 });
   console.log('QA test data ready');
   await mongoose.disconnect();
 }
