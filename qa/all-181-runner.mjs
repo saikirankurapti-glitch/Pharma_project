@@ -68,7 +68,7 @@ if(id==="TC-NFR-018"){const x=await A("/auth/verify-manager-pin",{method:"POST",
 if(id==="TC-NFR-019"){const x=await A("/products",{method:"POST",headers:auth(mg),body:"{}"});ok(x,x.r.status===400||x.r.status===500);return"invalid payload"}
 const path=id==="TC-NFR-002"?"/products?search=Dolo%20650":id==="TC-NFR-003"?"/products?search=Dolo":id==="TC-NFR-004"?"/invoices?limit=1":id==="TC-NFR-005"?"/reports/dashboard-stats":"/reports/daily-revenue";const a=[];for(let i=0;i<10;i++){const x=await A(path,{headers:auth(ph)});ok(x,x.r.status===200);a.push(x.r.status)}return"10-request performance probe"}
 }
-throw Error("No automation adapter")}
+throw Error("No automation adapter");}
 for(const id of ids){try{const actual=await run(id);results.push({id,status:actual.startsWith("BLOCKED:")?"BLOCKED":"PASS",actual})}catch(e){results.push({id,status:"FAIL",actual:e.message})}}
 fs.writeFileSync("all-181-results.json",JSON.stringify({total:results.length,summary:{PASS:results.filter(x=>x.status==="PASS").length,FAIL:results.filter(x=>x.status==="FAIL").length,BLOCKED:results.filter(x=>x.status==="BLOCKED").length},results},null,2));
 console.log(JSON.stringify({total:results.length,summary:{PASS:results.filter(x=>x.status==="PASS").length,FAIL:results.filter(x=>x.status==="FAIL").length,BLOCKED:results.filter(x=>x.status==="BLOCKED").length}},null,2));
