@@ -14,7 +14,7 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-async function login(email, password = 'QaPass@123') {
+async function login(email, password = process.env.QA_PASSWORD) {
   const r = await req('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
@@ -75,8 +75,8 @@ async function test(id, name, fn) {
   }
 }
 
-const pharmacist = await login('qa.pharmacist@genquantaa.com');
-const manager = await login('qa.manager@genquantaa.com');
+const pharmacist = await login(process.env.QA_PHARMACIST_EMAIL);
+const manager = await login(process.env.QA_MANAGER_EMAIL);
 
 await test('TC-E2E-001', 'Regular medicine sale', async () => {
   const p = await getProduct(pharmacist, 'Dolo 650');
@@ -146,7 +146,7 @@ await test('TC-E2E-003', 'Schedule X manager authorization', async () => {
   assert(noPin.status === 403, `Expected Schedule X sale without PIN to be rejected, got HTTP ${noPin.status}`);
   const badPin = await req('/invoices', { method: 'POST', headers: auth(pharmacist), body: JSON.stringify({ ...payload, managerPin: '0000' }) });
   assert(badPin.status === 403, `Expected invalid manager PIN to be rejected, got HTTP ${badPin.status}`);
-  const good = await req('/invoices', { method: 'POST', headers: auth(pharmacist), body: JSON.stringify({ ...payload, managerPin: '1234' }) });
+  const good = await req('/invoices', { method: 'POST', headers: auth(pharmacist), body: JSON.stringify({ ...payload, managerPin: process.env.QA_MANAGER_PIN }) });
   assert(good.status === 201, `Expected valid manager PIN to permit sale, got HTTP ${good.status}`);
 });
 
