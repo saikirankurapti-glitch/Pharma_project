@@ -1,5 +1,5 @@
 const BASE = process.env.BASE_URL || 'http://localhost:5000/api';
-const RUNTIME = process.env.QA_RUNTIME_FILE || '/tmp/qa-runtime.json';
+import { qaRuntime } from './runtime.mjs';
 
 async function req(path, options = {}) {
   const r = await fetch(BASE + path, {
