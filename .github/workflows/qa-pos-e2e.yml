@@ -73,6 +73,20 @@ jobs:
           JWT_SECRET: qa-jwt-secret
         run: node qa/pos-e2e.mjs | tee qa-results.json
 
+      - name: Run all 181 automated test cases
+        env:
+          BASE_URL: http://127.0.0.1:5000/api
+        run: node qa/all-181-runner.mjs
+
+      - name: Upload comprehensive QA results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pharmacy-pos-all-181-results
+          path: |
+            all-181-results.json
+            /tmp/pharmacy-backend.log
+
       - name: Upload QA results
         if: always()
         uses: actions/upload-artifact@v4
