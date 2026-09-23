@@ -50,7 +50,7 @@ for tc in IDS:
         elif tc=="TC-AUTH-012":
             s,_,_=call("/auth/users",token=mg); assert s==200; actual="staff roster available"
         elif tc in ("TC-AUTH-013","TC-AUTH-014"):
-            pin=RUNTIME.get("managerPin") or os.environ.get("QA_MANAGER_PIN") if tc.endswith("013") else "0000"; s,b,_=call("/auth/verify-manager-pin","POST",mg,{"pin":pin}); assert s==200 and b.get("authorized")== (pin==os.environ["QA_MANAGER_PIN"]); actual="manager PIN path"
+            pin=RUNTIME.get("managerPin") or os.environ.get("QA_MANAGER_PIN") if tc.endswith("013") else "0000"; s,b,_=call("/auth/verify-manager-pin","POST",mg,{"pin":pin}); assert s==200 and b.get("authorized")== (pin==RUNTIME.get("managerPin")); actual="manager PIN path"
         elif tc=="TC-AUTH-015":
             s,b,_=call("/billing/counters",token=ph); assert s==200 and any("Emergency" in str(x.get("name")) for x in b.get("data",[])); actual="emergency counter exposed"
         elif tc=="TC-AUTH-016":
