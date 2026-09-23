@@ -1,4 +1,5 @@
 const BASE = process.env.BASE_URL || 'http://localhost:5000/api';
+const RUNTIME = process.env.QA_RUNTIME_FILE || '/tmp/qa-runtime.json';
 
 async function req(path, options = {}) {
   const r = await fetch(BASE + path, {
@@ -14,7 +15,8 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-async function login(email, password = process.env.QA_PASSWORD) {
+async function login(email, password) {
+  if (!password && process.env.QA_PASSWORD) password = process.env.QA_PASSWORD;
   const r = await req('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
@@ -75,8 +77,8 @@ async function test(id, name, fn) {
   }
 }
 
-const pharmacist = await login(process.env.QA_PHARMACIST_EMAIL);
-const manager = await login(process.env.QA_MANAGER_EMAIL);
+const pharmacist = await login(process.env.QA_PHARMACIST_EMAIL, process.env.QA_PASSWORD);
+const manager = await login(process.env.QA_MANAGER_EMAIL, process.env.QA_PASSWORD);
 
 await test('TC-E2E-001', 'Regular medicine sale', async () => {
   const p = await getProduct(pharmacist, 'Dolo 650');
