@@ -24,7 +24,7 @@ def call(path,method="GET",token=None,payload=None,origin=None):
         except:b=raw
         return e.code,b,e.headers
 def login(email):
-    s,b,_=call("/auth/login","POST",payload={"email":email,"password":"QaPass@123"})
+    s,b,_=call("/auth/login","POST",payload={"email":email,"password":RUNTIME["password"]})
     if s!=200 or not b.get("token"): raise RuntimeError("QA login failed")
     return b["token"]
 ph=login(RUNTIME.get("pharmacistEmail") or os.environ.get("QA_PHARMACIST_EMAIL")); mg=login(RUNTIME.get("managerEmail") or os.environ.get("QA_MANAGER_EMAIL"))
