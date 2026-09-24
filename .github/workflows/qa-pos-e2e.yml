@@ -3,7 +3,7 @@ name: Pharmacy POS QA - Automated E2E
 on:
   workflow_dispatch:
   push:
-    branches: [ "qa/pos-automated-e2e" ]
+    branches: [ "qa/functional-testing" ]
   pull_request:
     branches: [ "main" ]
 
@@ -66,7 +66,7 @@ jobs:
           nohup npx tsx src/index.ts > /tmp/pharmacy-backend.log 2>&1 &
           for i in {1..30}; do curl -fsS http://127.0.0.1:5000/api/health && break || sleep 2; done
 
-      - name: Run 5 E2E business scenarios
+      - name: Run 30 E2E business journeys
         env:
           BASE_URL: http://127.0.0.1:5000/api
           MONGO_URI: mongodb://127.0.0.1:27017/genquantaa_pharmacy_qa
