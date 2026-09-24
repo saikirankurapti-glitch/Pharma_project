@@ -301,7 +301,7 @@ await test('TC-E2E-012', 'Purchase order lifecycle to status and retrieval', asy
   const po=await req('/purchase-orders',{method:'POST',headers:auth(manager),body:JSON.stringify({
     supplierId:supplier._id,supplierName:supplier.name,supplierPhone:supplier.phone||'',orderDate:new Date().toISOString(),
     expectedDeliveryDate:new Date(Date.now()+3*86400000).toISOString(),paymentTerms:'CREDIT_15_DAYS',
-    items:[{productId:p._id,productName:p.name,quantity:2,purchaseRate:20,mrp:p.unitMRP,sellingPrice:p.sellingPrice,gstRate:p.gstRate,totalAmount:40}],totalAmount:40,status:'DRAFT'
+    items:[{productId:p._id,productName:p.name,quantity:2,purchaseRate:20,estimatedRate:20,mrp:p.unitMRP,sellingPrice:p.sellingPrice,gstRate:p.gstRate,totalAmount:40}],totalAmount:40,status:'DRAFT'
   })});
   assert(po.status===201 && po.body?.data?.poNumber,'PO creation failed');
   const id=po.body.data._id;
@@ -316,7 +316,7 @@ await test('TC-E2E-013', 'Purchase order to GRN conversion state', async () => {
   const p=await getProduct(manager,'Dolo 650'); assert(supplier?._id,'Supplier unavailable');
   const po=await req('/purchase-orders',{method:'POST',headers:auth(manager),body:JSON.stringify({
     supplierId:supplier._id,supplierName:supplier.name,orderDate:new Date().toISOString(),
-    items:[{productId:p._id,productName:p.name,quantity:1,purchaseRate:20,mrp:p.unitMRP,sellingPrice:p.sellingPrice,gstRate:p.gstRate,totalAmount:20}],totalAmount:20,status:'DRAFT'
+    items:[{productId:p._id,productName:p.name,quantity:1,purchaseRate:20,estimatedRate:20,mrp:p.unitMRP,sellingPrice:p.sellingPrice,gstRate:p.gstRate,totalAmount:20}],totalAmount:20,status:'DRAFT'
   })});
   assert(po.status===201,'PO creation failed');
   const id=po.body.data._id;
