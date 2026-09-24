@@ -71,7 +71,9 @@ jobs:
           BASE_URL: http://127.0.0.1:5000/api
           MONGO_URI: mongodb://127.0.0.1:27017/genquantaa_pharmacy_qa
           JWT_SECRET: qa-jwt-secret
-        run: node qa/pos-e2e.mjs | tee qa-results.json
+        run: |
+          set -o pipefail
+          node qa/pos-e2e.mjs | tee qa-results.json
 
       - name: Run all 181 automated test cases
         env:
