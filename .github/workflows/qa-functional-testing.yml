@@ -1,0 +1,147 @@
+name: Pharmacy POS - Functional Testing
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - qa/functional-testing
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  functional-testing:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            qa/package.json
+
+      - name: Install backend
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install QA dependencies
+        working-directory: qa
+        run: npm install
+
+      - name: Install Playwright Chromium
+        working-directory: qa
+        run: npx playwright install --with-deps chromium
+
+      - name: Seed products
+        working-directory: backend
+        env:
+          MONGO_URI: mongodb://127.0.0.1:27017/genquantaa_pharmacy_qa
+          PORT: 5000
+          JWT_SECRET: qa-jwt-secret
+          JWT_REFRESH_SECRET: qa-refresh-secret
+          NODE_ENV: test
+        run: npx tsx src/seedMockData.ts
+
+      - name: Prepare isolated QA users
+        env:
+          MONGO_URI: mongodb://127.0.0.1:27017/genquantaa_pharmacy_qa
+          PORT: 5000
+          JWT_SECRET: qa-jwt-secret
+          JWT_REFRESH_SECRET: qa-refresh-secret
+          NODE_ENV: test
+          QA_PHARMACIST_EMAIL: qa.pharmacist@genquantaa.com
+          QA_MANAGER_EMAIL: qa.manager@genquantaa.com
+        run: |
+          npx tsx backend/qa/setup.ts
+          python3 - <<'PY'
+          import json
+          p=json.load(open('/tmp/qa-runtime.json'))
+          with open('/tmp/github-env','w') as f:
+              f.write('QA_PHARMACIST_EMAIL='+p['pharmacistEmail']+'\n')
+              f.write('QA_MANAGER_EMAIL='+p['managerEmail']+'\n')
+              f.write('QA_PASSWORD='+p['password']+'\n')
+              f.write('QA_MANAGER_PIN='+p['managerPin']+'\n')
+              f.write('QA_OWNER_PIN='+p['ownerPin']+'\n')
+          PY
+          cat /tmp/github-env >> "$GITHUB_ENV"
+
+      - name: Start backend
+        working-directory: backend
+        env:
+          MONGO_URI: mongodb://127.0.0.1:27017/genquantaa_pharmacy_qa
+          PORT: 5000
+          JWT_SECRET: qa-jwt-secret
+          JWT_REFRESH_SECRET: qa-refresh-secret
+          NODE_ENV: test
+          CLIENT_URL: http://127.0.0.1:5173
+        run: |
+          nohup npx tsx src/index.ts > /tmp/pharmacy-backend.log 2>&1 &
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:5000/api/health && break
+            sleep 2
+          done
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://127.0.0.1:5000/api
+        run: npm run build
+
+      - name: Start frontend
+        working-directory: frontend
+        run: |
+          nohup npx vite preview --host 0.0.0.0 --port 5173 > /tmp/pharmacy-frontend.log 2>&1 &
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:5173 && break
+            sleep 2
+          done
+
+      - name: Run browser functional tests
+        working-directory: qa
+        env:
+          FRONTEND_URL: http://127.0.0.1:5173
+        run: npx playwright test tests/functional/functional-suite.spec.ts
+
+      - name: Run existing 181 API/contract cases
+        env:
+          BASE_URL: http://127.0.0.1:5000/api
+        run: python3 qa/all_181_runner.py
+
+      - name: Build functional report
+        if: always()
+        run: python3 qa/scripts/build-functional-report.py
+
+      - name: Upload functional evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pharmacy-pos-functional-test-report
+          path: |
+            functional-report/
+            qa/playwright-report/
+            qa/test-results/
+            playwright-results.json
+            all-181-results.json
+            /tmp/pharmacy-backend.log
+            /tmp/pharmacy-frontend.log

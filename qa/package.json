@@ -1,0 +1,15 @@
+{
+  "name": "pharma-pos-qa",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test:e2e": "playwright test tests/e2e",
+    "test:smoke": "playwright test tests/smoke",
+    "test:api": "playwright test tests/api",
+    "test:regression": "playwright test tests/regression",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}
