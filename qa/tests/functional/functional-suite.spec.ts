@@ -109,6 +109,6 @@ test('WEB-CLI-001 clinical/consultation UI is reachable', async ({ page }) => {
 
 test('WEB-SEC-001 authenticated session is retained after navigation', async ({ page }) => {
   await signIn(page, pharmacistEmail!);
-  await page.getByTitle('Dashboard').click();
+  await page.getByTitle('Dashboard').first().click();
   await expect(page.locator('header').getByText(/GENQUANTAA POS/i)).toBeVisible();
 });
