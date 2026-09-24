@@ -37,13 +37,13 @@ test('WEB-AUTH-001 sign in successfully', async () => {
 
 test('WEB-POS-001 open POS terminal', async () => {
   await pharmacistPage.getByTitle('POS Billing Terminal').click();
-  await expect(pharmacistPage.getByPlaceholder(/Search Medicine Name/i)).toBeVisible();
+  await expect(pharmacistPage.getByPlaceholder(/Search Drug \/ Salt \/ Brand \/ Barcode/i)).toBeVisible();
   await expect(pharmacistPage.getByText(/Billing Summary/i).first()).toBeVisible();
 });
 
 test('WEB-POS-002 search medicine and display result', async () => {
   await pharmacistPage.getByTitle('POS Billing Terminal').click();
-  const search = pharmacistPage.getByPlaceholder(/Search Medicine Name/i);
+  const search = pharmacistPage.getByPlaceholder(/Search Drug \/ Salt \/ Brand \/ Barcode/i);
   await search.fill('Dolo 650');
   await expect(pharmacistPage.getByText(/Dolo 650/i).first()).toBeVisible();
 });
@@ -51,7 +51,7 @@ test('WEB-POS-002 search medicine and display result', async () => {
 test('WEB-INV-001 open inventory and search products', async () => {
   await pharmacistPage.getByTitle('Inventory Catalog').click();
   await expect(pharmacistPage.getByText(/Pharmacy Inventory & Stock Catalog/i)).toBeVisible();
-  await expect(pharmacistPage.getByPlaceholder(/Search Medicine Name/i)).toBeVisible();
+  await expect(pharmacistPage.getByPlaceholder(/Search Drug \/ Salt \/ Brand \/ Barcode/i)).toBeVisible();
 });
 
 test('WEB-INV-002 inventory stock indicators are visible', async () => {
